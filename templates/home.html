@@ -1,0 +1,953 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="/static/plugins/select2/css/select2.min.css">
+<link rel="stylesheet" href="/static/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="col-12">
+        <!-- Default box -->
+        <div class="card my-card">
+          <div class="card-body">
+            
+          </div>
+          <!-- /.card-body -->
+        </div>
+        <!-- /.card -->
+    </div>
+
+    <div class="row p-3">
+        <div class="col-lg-3 col-6">
+          <!-- small box -->
+          <div class="small-box bg">
+            <div class="inner">
+              <h3>{{regions_count}}</h3>
+
+              <p>Hudular</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-light fa-map-location-dot"></i>
+            </div>
+          </div>
+        </div>
+        <!-- ./col -->
+        <div class="col-lg-3 col-6">
+          <!-- small box -->
+          <div class="small-box bg">
+            <div class="inner">
+              <h3>{{schools_count}}</h3>
+
+              <p>Maktablar</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-regular fa-school"></i>
+            </div>
+          </div>
+        </div>
+        <!-- ./col -->
+        <div class="col-lg-3 col-6">
+          <!-- small box -->
+          <div class="small-box bg">
+            <div class="inner">
+              <h3>{{teachers_count}}</h3>
+              <p>O'qituvchilar</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-thin fa-person-chalkboard"></i>
+            </div>
+          </div>
+        </div>
+        <!-- ./col -->
+        <div class="col-lg-3 col-6">
+          <!-- small box -->
+          <div class="small-box bg">
+            <div class="inner">
+              <h3>{{students_count}}</h3>
+              <p>O'quvchilar</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-thin fa-user-graduate"></i>
+            </div>
+          </div>
+        </div>
+        <!-- ./col -->
+    </div>
+
+    <div class="row w-100 d-flex align-items-stretch">
+        {% if avg_by_territory and avg_by_territory | length > 0 %}
+        <div class="col-md-4 h-100 align-items-stretch">
+            <div class="card card-primary h-100">
+                <div class="card-body">
+                    <h3 class="text-center" id="resultText"> bo'yicha umumiy o'rtacha natija <p>{{examQuarter}} chorak</p></h3>
+                    <canvas id="donutChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                    <div id="chartMiddleText" style="position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); font-size: 20px; font-weight: bold;"></div>
+                    
+                    <div class="form-group">
+                        <select id="territorySelect" class="form-control">
+                          <!-- Options will be populated dynamically -->
+                        </select>
+                    </div>
+                
+                </div>
+
+                
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if territories_data and territories_data | length > 0%}
+        <div class="col-md-5 h-100 align-items-stretch">
+            <div class="card card-success h-100">
+                <div class="card-body">
+                    <div class="chart">
+                        <h3 class="text-center">Sinov turlari ishtirok etgan maktablar soni <p>{{examQuarter}} chorak</p></h3>
+                        <canvas id="barChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if exam_methods_data and exam_methods_data | length > 0 %}
+        <div class="col-md-3 h-100 align-items-stretch">
+            <div class="card card-primary h-100">
+                <div class="card-body">
+                    <h3 class="text-center">Sinov turlari bo‘yicha o'quvchilar qamrovi <p>{{examQuarter}} chorak</p></h3>
+                    <canvas id="pieChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                    <div class="row">
+                        <div class="col-6 callout" id="callout-online" style="display: none;">
+                            <p>Online: <span id="online-count">0</span></p>
+                        </div>
+                        <div class="col-6 callout" id="callout-offline" style="display: none;">
+                            <p>Offline: <span id="offline-count">0</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="row w-100 d-flex align-items-stretch">
+
+        {% if avg_by_school and avg_by_school | length > 0 %}
+        <div class="col-md-4 h-100 align-items-stretch">
+            <div class="card card-primary h-100">
+
+                <div class="card-body">
+                    <h3 id="chartTitle" class="text-center"></h3>
+                    <canvas id="horizontalBarChart" style="min-height: 400px; height: 400px; max-height: 400px; max-width: 100%;"></canvas>
+                
+                    <div class="form-group">
+                        <select id="territorySelectHorizontal" class="form-control" style="margin-bottom: 5px;">
+                          <!-- Options will be populated dynamically -->
+                        </select>
+                        <select id="regionSelectHorizontal" class="form-control">
+                          <!-- Options will be populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+
+                
+            </div>
+        </div>
+        {% endif %}
+
+        {% if teachers_info and teachers_info | length > 0 %}
+        <div class="col-md-4 h-100 align-items-stretch">
+            <div class="card card-primary h-100">
+                <div class="card-body">
+                    <div class="row">
+                        <h3 id="TeacherPieTitle" class="text-center"></h3>
+                        <div class="col-md-6">
+                            <canvas id="genderPieChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <canvas id="categoryPieChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 callout callout-success" id="callout-all">
+                            <p>Jami kadrlar: <span id="all-count">0</span></p>
+                        </div>
+                        <div class="col-6 callout callout-success" id="callout-special">
+                            <p>Mutaxassis: <span id="special-count">0</span></p>
+                        </div>
+                        <div class="col-4 callout callout-success" id="callout-first">
+                            <p>I toifa: <span id="first-count">0</span></p>
+                        </div>
+                        <div class="col-4 callout callout-success" id="callout-second">
+                            <p>II toifa: <span id="second-count">0</span></p>
+                        </div>
+                        <div class="col-4 callout callout-success" id="callout-highest">
+                            <p>Oliy toifa: <span id="highest-count">0</span></p>
+                        </div>
+                    </div>
+                    
+
+                    <div class="form-group">
+                        <select id="territorySelectTeacher" class="form-control select2" style="margin-bottom: 5px;">
+                            <!-- Options will be populated dynamically -->
+                        </select>
+                        <select id="schoolSelectTeacher" class="form-control select2" style="display: none;">
+                            <!-- Options will be populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if teachers_info_by_territory and teachers_info_by_territory | length > 0 %}
+        <div class="col-md-4 h-100 align-items-stretch">
+            <div class="card card-primary h-100">
+                <div class="card-body">
+                    
+                    <h3 id="TeacherBarTitle" class="text-center"></h3>
+                    <div class="chart-container" style="position: relative; height: 400px;">
+                        
+                        <canvas id="barChartTeacher" style="min-height: 400px; height: 400px; max-height: 400px; max-width: 100%;"></canvas>
+                    </div>
+
+                    <div class="callout callout-success" id="callout-category">
+                    </div>
+                    
+                    <div class="form-group">
+                        <select id="categorySelect" class="form-control">
+                            <option value="special">Mutaxassis</option>
+                            <option value="first">I toifa</option>
+                            <option value="second">II toifa</option>
+                            <option value="highest">Oliy toifa</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+    </div>
+
+</div>
+{% endblock %}
+
+<!-- </script> -->
+ {% block scripts %}
+ <!-- DataTables  & Plugins -->
+<script src="/static/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="/static/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+<script src="/static/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+<script src="/static/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+<script src="/static/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+<script src="/static/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+<script src="/static/plugins/jszip/jszip.min.js"></script>
+<script src="/static/plugins/pdfmake/pdfmake.min.js"></script>
+<script src="/static/plugins/pdfmake/vfs_fonts.js"></script>
+<script src="/static/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+<script src="/static/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+<script src="/static/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+<script src="/static/plugins/chart.js/Chart.min.js"></script>
+<script src="/static/plugins/chart.js/chartjs-plugin-datalabels.min.js"></script>   
+<script>
+    {%if avg_by_territory and avg_by_territory | length > 0%}
+    document.addEventListener('DOMContentLoaded', function () {
+        const avgByTerritory = {{ avg_by_territory | tojson }};
+
+        const territorySelect = document.getElementById('territorySelect');
+        const chartMiddleText = document.getElementById('chartMiddleText');
+        const resultText = document.getElementById('resultText');
+        const donutChartCanvas = document.getElementById('donutChart').getContext('2d');
+
+        // Populate dropdown
+        avgByTerritory.forEach(({ territory }) => {
+            const option = document.createElement('option');
+            option.value = territory;
+            option.textContent = territory;
+            territorySelect.appendChild(option);
+        });
+
+        // Initial chart data
+        const donutData = {
+            datasets: [{
+            data: [0, 100],
+            backgroundColor: ['rgba(30, 58, 138, 0.9)', '#d2d6de']
+            }]
+        };
+
+        const donutOptions = {
+            maintainAspectRatio: false,
+            responsive: true,
+            cutout: '70%', // Adjust the cutout size for the donut chart
+            plugins: {
+            legend: { display: false }
+            }
+        };
+
+        const chart = new Chart(donutChartCanvas, {
+            type: 'doughnut',
+            data: donutData,
+            options: donutOptions
+        });
+
+        // Update chart on territory selection
+        territorySelect.addEventListener('change', function () {
+            const selectedTerritory = this.value;
+            if (selectedTerritory === 'Barcha hudular') {
+            resultText.innerHTML = `Respublika bo'yicha umumiy o'rtacha natija <p>{{examQuarter}} chorak</p>`;
+            } else{
+                resultText.innerHTML = `${selectedTerritory} bo'yicha umumiy o'rtacha natija <p>{{examQuarter}} chorak</p>`;
+            }
+            const territoryData = avgByTerritory.find(t => t.territory === selectedTerritory);
+            const average = territoryData ? territoryData.average : 0;
+
+            // Update chart data
+            chart.data.datasets[0].data = [average, 100 - average];
+            chart.update();
+
+            // Update middle text
+            chartMiddleText.textContent = `${average}%`;
+        });
+
+        // Set initial selection
+        territorySelect.value = avgByTerritory[0].territory;
+        territorySelect.dispatchEvent(new Event('change'));
+    });
+    {%endif%}
+
+</script>
+<script>
+    // $(function () {
+    // Jinja2 provides exam_method_results as a JSON object
+    {% if exam_methods_data and exam_methods_data | length > 0 %}
+        var examMethodResults = {{ exam_methods_data | tojson }};
+
+        const exam_methods_dict = { "on": "Online", "off": "Offline" }
+        const methods_colors = { "on": "rgba(30, 58, 138, 0.9)", "off": "rgba(147, 197, 253, 0.9)" }
+
+        // Extract labels and data from exam_method_results
+        var labels = examMethodResults.map(item => exam_methods_dict[item.exam_method]);
+        var data = examMethodResults.map(item => item.percentage);
+        var counts = examMethodResults.map(item => item.count);
+        var colors = examMethodResults.map(item => methods_colors[item.exam_method]);
+
+        let onlineExists = false;
+        let offlineExists = false;
+
+        examMethodResults.forEach(item => {
+            if (item.exam_method === "on") {
+                onlineExists = true;
+                document.getElementById("online-count").textContent = item.count + ' ta';
+                document.getElementById("callout-online").style.display = "block"; // Show Online block
+            } else if (item.exam_method === "off") {
+                offlineExists = true;
+                document.getElementById("offline-count").textContent = item.count + ' ta';
+                document.getElementById("callout-offline").style.display = "block"; // Show Offline block
+            }
+        });
+
+        // Ensure only relevant methods are displayed
+        if (!onlineExists) {
+            document.getElementById("callout-online").style.display = "none"; // Hide Online block
+        }
+        if (!offlineExists) {
+            document.getElementById("callout-offline").style.display = "none"; // Hide Offline block
+        }
+
+
+        // Donut chart setup
+        var pieChartCanvas = $('#pieChart').get(0).getContext('2d')
+
+        var pieData = {
+            labels: labels,
+            datasets: [{
+                data: data, // Data for percentages
+                counts: counts, // Data for counts
+                backgroundColor: colors
+            }]
+        };
+
+        if (data.length == 1) {
+            pieData.datasets[0].borderWidth = 0; // Remove border for single data
+        }
+
+        var pieOptions = {
+            maintainAspectRatio: false,
+            responsive: true,
+            cutoutPercentage: 1, // Small cutout for doughnut effect
+            animation: {
+                animateScale: true
+            },
+            elements: {
+                arc: {
+                    roundedCornersFor: 0 // Helps smooth edges in some cases
+                }
+            },
+            plugins: {
+                datalabels: {
+                    color: '#fff',
+                    display: true,
+                    font: {
+                        weight: 'bold',
+                        size: 11
+                    },
+                    formatter: function (value, context) {
+                        return value + '%';
+                    }
+                }
+            },
+            tooltips: {
+                callbacks: {
+                    label: function (tooltipItem, data) {
+                        var dataset = data.datasets[tooltipItem.datasetIndex];
+                        var label = data.labels[tooltipItem.index];
+                        var count = dataset.counts[tooltipItem.index]; // Use the count data for tooltip
+                        var percentage = dataset.data[tooltipItem.index];
+                        return `${label}: ${count} (${percentage}%)`;
+                    }
+                }
+            }
+        };
+
+        // Create pie or donut chart
+        new Chart(pieChartCanvas, {
+            type: 'pie',
+            data: pieData,
+            options: pieOptions,
+            plugins: [ChartDataLabels]
+        });
+    {% endif %}
+
+    // });
+</script>
+<script>
+    // Data for territories_data
+    {% if territories_data and territories_data | length > 0%}
+        var territoriesData = {{ territories_data | tojson }};
+
+        // Extract territory names and school counts
+        var labels = territoriesData.map(item => item.territory); // Territory labels
+        var schoolCounts = territoriesData.map(item => item.school_count); // School count data
+
+        // Generate a single dataset for school counts
+        var datasets = [{
+            label: "Maktablar soni", // Label for the dataset
+            data: schoolCounts,    // School counts for each territory
+            backgroundColor: 'rgba(54, 162, 235, 0.7)', // Assign a uniform color to each bar
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }];
+
+        // Get the canvas context for barChart3
+        var barChartCanvas3 = $('#barChart').get(0).getContext('2d');
+
+        // Define bar chart options for barChart3
+        var barChartOptions3 = {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true, // Start y-axis from 0
+                        stepSize: 10,       // Set step size for y-axis
+                        suggestedMax: Math.max(...schoolCounts) + 10 // Adjust max value based on data
+                    }
+                }],
+                xAxes: [{
+                    barPercentage: 0.6,      // Adjust width of each bar
+                    categoryPercentage: 0.8, // Adjust spacing between bars
+                    ticks: {
+                        minRotation: 45,     // Rotate labels to display vertically
+                        maxRotation: 45,
+                        autoSkip: false,     // Ensure all labels are shown
+                        fontSize: 10,
+                        padding: 10       
+                    }
+                }]
+            },
+            plugins: {
+                datalabels: {
+                    anchor: 'end',        // Position the labels above each bar
+                    align: 'top',         // Align label to the top of the bar
+                    color: '#000',        // Label text color
+                    font: {
+                        weight: 'bold',
+                        size: 10
+                    },
+                    formatter: function (value) {
+                        return value; // Display the school count as is
+                    }
+                }
+            },
+            legend: {
+                display: false // Disable legend display
+            }
+        };
+
+        // Initialize barChart3 with the territories data
+        new Chart(barChartCanvas3, {
+            type: 'bar',
+            data: {
+                labels: labels,   // X-axis labels (territories)
+                datasets: datasets // Dataset for school counts
+            },
+            options: barChartOptions3,
+            plugins: [ChartDataLabels] // Register the Data Labels plugin
+        });
+    {% endif %}
+</script>
+<script>
+    {% if avg_by_school and avg_by_school | length > 0 %}
+    document.addEventListener('DOMContentLoaded', function () {
+        const avgBySchool = {{ avg_by_school | tojson }};
+
+        const territorySelect = document.getElementById('territorySelectHorizontal');
+        const regionSelect = document.getElementById('regionSelectHorizontal');
+        const barChartCanvas = document.getElementById('horizontalBarChart').getContext('2d');
+        const chartTitle = document.getElementById('chartTitle');
+
+        // Initialize dropdowns
+        territorySelect.innerHTML = '<option value="all">Barcha hududlar</option>';
+        regionSelect.innerHTML = '<option value="all">Barcha tumanlar</option>';
+
+        // Populate the territory dropdown with unique territories
+        const territories = [...new Set(avgBySchool.map(item => item.territory))];
+        territories.forEach(territory => {
+            const option = document.createElement('option');
+            option.value = territory;
+            option.textContent = territory;
+            territorySelect.appendChild(option);
+        });
+
+        // Function to populate the region dropdown based on the selected territory
+        function updateRegions(selectedTerritory) {
+            regionSelect.innerHTML = '<option value="all">Barcha hududlar</option>';
+            const regions = [...new Set(avgBySchool
+                .filter(item => selectedTerritory === 'all' || item.territory === selectedTerritory)
+                .map(item => item.region))];
+            regions.forEach(region => {
+                const option = document.createElement('option');
+                option.value = region;
+                option.textContent = region;
+                regionSelect.appendChild(option);
+            });
+        }
+
+        // Function to filter and sort data
+        function getFilteredData(selectedTerritory, selectedRegion) {
+            let filteredData = avgBySchool;
+
+            if (selectedTerritory !== 'all') {
+                filteredData = filteredData.filter(item => item.territory === selectedTerritory);
+            }
+            if (selectedRegion !== 'all') {
+                filteredData = filteredData.filter(item => item.region === selectedRegion);
+            }
+
+            // Get top 10 schools
+            return filteredData.sort((a, b) => b.average - a.average).slice(0, 10);
+        }
+
+        const updateTitle = (selectedTerritory, selectedRegion) => {
+            const territoryName = selectedTerritory === 'all' ? 'Respublika' : selectedTerritory;
+            const regionName = selectedRegion === 'all' ? 'barcha tumanlar' : selectedRegion;
+            chartTitle.innerHTML = `${territoryName}dagi ${regionName} bo'yicha top 10 maktab <p>{{examQuarter}} chorak</p>`;
+        };
+
+        // Function to update the chart
+        function updateChart(selectedTerritory, selectedRegion) {
+            const filteredData = getFilteredData(selectedTerritory, selectedRegion);
+            const labels = filteredData.map(item => item.school);
+            const data = filteredData.map(item => item.average);
+
+            // Update chart data
+            barChart.data.labels = labels;
+            barChart.data.datasets[0].data = data;
+            barChart.update();
+
+            updateTitle(selectedTerritory, selectedRegion);
+        }
+
+        // Initial chart setup
+        const barChartData = {
+            labels: [],
+            datasets: [{
+                label: 'Natijalar',
+                data: [],
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        };
+
+        const barChartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                xAxes: [{
+                    ticks: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }]
+            },
+            plugins: {
+                datalabels: {
+                    anchor: 'end',
+                    align: 'right',
+                    color: '#000',
+                    font: {
+                        size: 14
+                    }
+                }
+            },
+            legend: {
+                display: false
+            }
+        };
+
+        const barChart = new Chart(barChartCanvas, {
+            type: 'horizontalBar',
+            data: barChartData,
+            options: barChartOptions,
+            plugins: [ChartDataLabels]
+        });
+
+        // Event listener for territory dropdown change
+        territorySelect.addEventListener('change', function () {
+            const selectedTerritory = this.value;
+            updateRegions(selectedTerritory);
+            updateChart(selectedTerritory, regionSelect.value);
+        });
+
+        // Event listener for region dropdown change
+        regionSelect.addEventListener('change', function () {
+            updateChart(territorySelect.value, this.value);
+        });
+
+        // Initial load: Show top 10 schools across all territories and regions
+        territorySelect.value = 'all';
+        regionSelect.value = 'all';
+        updateRegions('all');
+        updateChart('all', 'all');
+    });
+    {% endif %}
+
+</script>
+<script>
+    {% if teachers_info and teachers_info | length > 0 %}
+    document.addEventListener('DOMContentLoaded', function () {
+        const teachersInfo = {{ teachers_info | tojson }};
+        const teachersSchools = {{ teachers_schools | tojson }};
+        const territorySelect = document.getElementById('territorySelectTeacher');
+        const schoolSelect = document.getElementById('schoolSelectTeacher');
+        const genderPieCanvas = document.getElementById('genderPieChart').getContext('2d');
+        const categoryPieCanvas = document.getElementById('categoryPieChart').getContext('2d');
+        const title = document.getElementById('TeacherPieTitle'); 
+
+        // Populate the dropdown with available territories
+        const populateTerritoryDropdown = () => {
+            teachersSchools.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.territory;
+                option.textContent = item.territory;
+                territorySelect.appendChild(option);
+            });
+        };
+
+        // Populate the school dropdown based on selected territory
+        const populateSchoolDropdown = (selectedTerritory) => {
+            // Clear previous school options
+            schoolSelect.innerHTML = '';
+            const territoryData = teachersSchools.find(item => item.territory === selectedTerritory);
+
+            if (territoryData && selectedTerritory !== 'Barcha hududlar') {
+                // Show school dropdown and populate options
+                schoolSelect.style.display = 'block';
+                territoryData.school.forEach(school => {
+                    const option = document.createElement('option');
+                    option.value = school;
+                    option.textContent = school;
+                    schoolSelect.appendChild(option);
+                });
+            } else {
+                // Hide school dropdown
+                schoolSelect.style.display = 'none';
+            }
+        };
+
+        const getTerritoryData = (selectedTerritory) => {
+            return teachersInfo.find(item => item.territory === selectedTerritory);
+        };
+
+        const getSchoolData = (territory, school) => {
+        return teachersInfo.find(item => item.territory === territory && item.school === school);
+    };
+
+        const updatePieTitle = (selectedTerritory, selectedSchool) => {
+            const territoryName = selectedTerritory === 'Barcha hududlar' ? 'Respublika' : selectedTerritory;
+            const schoolName = selectedSchool ? `, ${selectedSchool}` : '';
+            title.innerHTML = `${territoryName}${schoolName} bo'yicha o'qituvchilar ma'lumotlari <p>{{examQuarter}} chorak</p>`;
+        };
+
+        const updateCharts = (territoryData) => {
+            const genderData = {
+                labels: ['Ayollar', 'Erkaklar'],
+                datasets: [{
+                    data: [territoryData.women_teachers_percentage, territoryData.men_teachers_percentage],
+                    counts: [territoryData.women_teachers_count, territoryData.men_teachers_count],
+                    backgroundColor: ['rgba(255, 99, 132, 0.9)', 'rgba(54, 162, 235, 0.9)']
+                }]
+            };
+
+            const categoryData = {
+                labels: ['Mutaxassis', 'I toifa', 'II toifa', 'Oliy toifa'],
+                datasets: [{
+                    data: [
+                        territoryData.special_teachers_percentage,
+                        territoryData.first_category_teachers_percentage,
+                        territoryData.second_category_teachers_percentage,
+                        territoryData.highest_category_teachers_percentage
+                    ],
+                    counts: [
+                        territoryData.special_teachers_count,
+                        territoryData.first_category_teachers_count,
+                        territoryData.second_category_teachers_count,
+                        territoryData.highest_category_teachers_count
+                    ],
+                    backgroundColor: [
+                        'rgba(255, 159, 64, 0.9)',
+                        'rgba(75, 192, 192, 0.9)',
+                        'rgba(153, 102, 255, 0.9)',
+                        'rgba(255, 205, 86, 0.9)'
+                    ]
+                }]
+            };
+
+            genderPieChart.data = genderData;
+            genderPieChart.update();
+
+            categoryPieChart.data = categoryData;
+            categoryPieChart.update();
+        };
+
+        const updateCounts = (territoryData) => {
+            document.getElementById('all-count').textContent = territoryData.teachers_count;
+            document.getElementById('special-count').textContent = territoryData.special_teachers_count;
+            document.getElementById('first-count').textContent = territoryData.first_category_teachers_count;
+            document.getElementById('second-count').textContent = territoryData.second_category_teachers_count;
+            document.getElementById('highest-count').textContent = territoryData.highest_category_teachers_count;
+        };
+
+        const genderPieChart = new Chart(genderPieCanvas, {
+            type: 'pie',
+            data: {},
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    datalabels: {
+                        color: '#000',
+                        display: true,
+                        font: {
+                            size: 11
+                        },
+                        formatter: (value) => `${value}%`
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+
+        const categoryPieChart = new Chart(categoryPieCanvas, {
+            type: 'pie',
+            data: {},
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    datalabels: {
+                        color: '#000',
+                        display: true,
+                        font: {
+                            size: 11
+                        },
+                        formatter: (value) => `${value}%`
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+
+        territorySelect.addEventListener('change', function () {
+            const selectedTerritory = this.value;
+            const territoryData = getTerritoryData(selectedTerritory);
+
+            populateSchoolDropdown(selectedTerritory);
+
+            if (territoryData) {
+                updateCharts(territoryData);
+                updateCounts(territoryData);
+            }
+            updatePieTitle(selectedTerritory, '');
+        });
+
+        schoolSelect.addEventListener('change', function () {
+            const selectedTerritory = territorySelect.value;
+            const selectedSchool = this.value;
+
+            const data = getSchoolData(selectedTerritory, selectedSchool);
+            updateCharts(data);
+            updateCounts(data);
+            updatePieTitle(selectedTerritory, selectedSchool);
+        });
+
+        populateTerritoryDropdown();
+        populateSchoolDropdown(territorySelect.value);
+        territorySelect.value = teachersSchools[0].territory;
+        const initialData = getTerritoryData(territorySelect.value);
+
+        if (initialData) {
+            updateCharts(initialData);
+            updateCounts(initialData);
+        }
+        updatePieTitle(territorySelect.value, '');
+    });
+    {% endif %}
+</script>
+<script>
+    {% if teachers_info_by_territory and teachers_info_by_territory | length > 0 %}
+        document.addEventListener('DOMContentLoaded', function () {
+        const teachersInfoWithAll = {{ teachers_info_by_territory | tojson }};
+        const TeacherBarTitle = document.getElementById('TeacherBarTitle'); 
+
+        // del first element from teachersInfo
+        teachersInfo = teachersInfoWithAll.slice(1);
+        teacherAllInfo = teachersInfoWithAll[0];
+        
+
+        const categorySelect = document.getElementById('categorySelect');
+        const calloutCategory = document.getElementById('callout-category');
+        const barChartCanvas = document.getElementById('barChartTeacher').getContext('2d');
+
+        // Mapping for category selection
+        const categoryMapping = {
+            special: {
+                label: 'Mutaxassis',
+                dataKey: 'special_teachers_count'
+            },
+            first: {
+                label: 'I toifa',
+                dataKey: 'first_category_teachers_count'
+            },
+            second: {
+                label: 'II toifa',
+                dataKey: 'second_category_teachers_count'
+            },
+            highest: {
+                label: 'Oliy toifa',
+                dataKey: 'highest_category_teachers_count'
+            }
+        };
+
+        const updateCallout = (selectedCategory) => {
+            const { label, dataKey } = categoryMapping[selectedCategory];
+            const count = teacherAllInfo[dataKey]; // Get the count for the selected category
+            calloutCategory.innerHTML = `<p>Barcha hududlardagi ${label} ustozlar: ${count} ta</p>`;
+        };
+
+        updateBarTitle = (selectedCategory) => {
+            category = categoryMapping[selectedCategory];
+            console.log(category);
+            TeacherBarTitle.innerHTML = `Hududlar kesimi bo'yicha ${category.label} o'qituvchilari ma'lumotlari <p>{{examQuarter}} chorak</p>`;
+        };
+
+        // Function to update the bar chart
+        const updateBarChart = (selectedCategory) => {
+            const { label, dataKey } = categoryMapping[selectedCategory];
+
+            // Prepare data for the selected category
+            const labels = teachersInfo.map(item => item.territory); // Territories
+            const data = teachersInfo.map(item => item[dataKey]); // Counts for the selected category
+
+            // Update chart data
+            barChart.data.labels = labels;
+            barChart.data.datasets[0].label = label;
+            barChart.data.datasets[0].data = data;
+
+            barChart.options.plugins.datalabels.padding.bottom = 1 // Adjust y-axis max value
+
+            // Refresh the chart
+            barChart.update();
+        };
+
+        // Initialize the bar chart
+        const barChart = new Chart(barChartCanvas, {
+            type: 'bar',
+            data: {
+                labels: [], // Territories (will be populated dynamically)
+                datasets: [{
+                    label: '', // Category label (e.g., "Mutaxassis")
+                    data: [], // Counts for the selected category (e.g., "Mutaxassis counts")
+                    backgroundColor: 'rgba(75, 192, 192, 0.9)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true, // Start y-axis from 0
+                            stepSize: 40,
+                            // suggestedMax: 260
+                        }
+                    }],
+                },
+                plugins: {
+                    datalabels: {
+                        anchor: 'end',        // Position the labels above each bar
+                        align: 'top',         // Align label to the top of the bar
+                        color: '#000',        // Label text color
+                        font: {
+                            weight: 'bold',
+                            size: 10
+                        },
+                        formatter: function (value) {
+                            return value; // Display the school count as is
+                        }
+                    }
+                },
+                legend: {
+                    display: false // Disable legend display
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+
+        // Event listener for category selection
+        categorySelect.addEventListener('change', function () {
+            const selectedCategory = this.value; // Get the selected category (e.g., "special")
+            updateBarChart(selectedCategory); // Update the chart
+            updateCallout(selectedCategory); 
+            updateBarTitle(selectedCategory);
+        });
+
+        // Initial load
+        categorySelect.value = 'special'; // Default category
+        updateBarChart('special'); // Load the chart with default category
+        updateCallout('special'); // Load the callout with default category
+        updateBarTitle('special');
+    });
+
+{% endif %}
+
+</script> 
+{% endblock %}
+
+

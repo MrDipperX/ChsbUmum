@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="/static/plugins/select2/css/select2.min.css">
+<link rel="stylesheet" href="/static/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="<div class="container-fluid">
+    <div class="card col-md-4">
+        <div class="card-header">
+            <h3 class="card-title">{{ title }}</h3>
+
+            <div class="card-tools">
+                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button type="button" class="btn btn-tool" data-card-widget="remove">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <!-- /.card-header -->
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-10">
+                    <form  {% if is_prod%}action="{{ https_url_for(request,'schools') }}"{%else%}action="{{ url_for('schools') }}"{%endif%} method="POST">
+                    <div class="form-group">
+                        <label>O'quv yili</label>
+                        <select id="exam-year" name="examYear" class="form-control select2" style="width: 100%;">
+                            {% for year, quarters in periods.items() %}
+                            {% if examYear %}
+                                <option value="{{ year }}" {% if year == examYear %}selected="selected"{% endif %}>{{ year }}</option>
+                            {% else %}
+                                <option value="{{ year }}" {% if loop.first %}selected="selected"{% endif %}>{{ year }}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                        
+                        <label for="exam-quarter">Chorak:</label>
+                        <select id="exam-quarter" name="examQuarter" class="form-control select2" style="width: 100%;">
+                            {% if examQuarter and periods.get(examYear) %}
+                                {% for quarter in periods[examYear] %}
+                                    <option value="{{ quarter }}" {% if quarter == examQuarter %}selected="selected"{% endif %}>
+                                        {{ quarter }}
+                                    </option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                        <label for="territory">Hudud:</label>
+                            <select id="territory" name="territory" class="form-control select2" style="width: 100%;">
+                                {% for key, val in all_territories.items() %}
+                                    <option value="{{ key }}" {% if val == territory %}selected="selected"{% endif %}>{{ val }}</option>
+                                {% endfor %}
+                            </select>
+                            <label for="region">Tuman:</label>
+                            <select id="region" name="region" class="form-control select2" style="width: 100%;">
+                                <option value="" selected>Barcha tumanlar</option> <!-- Default option -->
+                            </select>
+                            <label for="studyClass">Sinf:</label>
+                            <select id="studyClass" name="studyClass" class="form-control select2" style="width: 100%;">
+                                {% for key, val in all_classes.items() %}
+                                    <option value="{{ key }}" {% if val == studyClass %}selected="selected"{% endif %}>{{ val }}</option>
+                                {% endfor %}
+                            </select>
+
+                        <button type="submit" class="btn btn-primary" style="margin-top: 15px;">Saralash</button>
+                    </div>
+                    </form>
+                <!-- /.form-group -->
+                </div>
+            </div>
+        <!-- /.row -->
+        </div>
+  </div>
+
+
+    {% if school_results and school_results | length > 0 %}
+    <div class="row">
+    <div class="col-12">
+        <!-- /.card -->
+
+        <div class="card">
+        <div class="card-header">
+            <h3 style="text-align: center;"><b>{{ table_title }}</b></h3>
+            <h6 style="text-align: center; color:darkgrey;">Fanlar bo‘yicha natijalar (%)</h6>
+        </div>
+        <!-- /.card-header -->
+        <div class="card-body">
+            <table class="table table-head-fixed text-nowrap table-bordered">
+                <thead>
+                  <tr>
+                    <!-- Add index header -->
+                    <!-- <th>№</th> -->
+                    {% for key in school_results[0].keys() %}
+                      <th class="text-center">{{ (table_headers[key] if key in table_headers else key | capitalize) | safe }}</th>
+                    {% endfor %}
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for result in school_results %}
+                    <tr>
+                      <!-- Display the row index -->
+                      <!-- <td class="text-center">{{ loop.index }}</td> -->
+                      {% for key in result.keys() %}
+                        <td>
+                            {{ result[key] if result[key] is not none else "" }}
+                        </td>
+                      {% endfor %}
+                    </tr>
+                  {% endfor %}
+                </tbody>
+            </table>
+            
+        </div>
+        <!-- /.card-body -->
+        
+        <div class="card-footer clearfix">
+            <ul class="pagination pagination-sm m-0 float-right" id="pagination">
+              {% if page > 1 %}
+                <!-- Previous Button -->
+                <li class="page-item">
+                  <a class="page-link" href="#" data-page="{{ page - 1 }}">&laquo;</a>
+                </li>
+              {% endif %}
+          
+              {% if page > 2 %}
+                <!-- First Page -->
+                <li class="page-item">
+                  <a class="page-link" href="#" data-page="1">1</a>
+                </li>
+                {% if page > 3 %}
+                  <!-- Ellipsis -->
+                  <li class="page-item disabled">
+                    <a class="page-link" href="#">...</a>
+                  </li>
+                {% endif %}
+              {% endif %}
+          
+              <!-- Current Page and One Before/After -->
+              {% for p in range(page - 1, page + 2) %}
+                {% if p >= 1 and p <= totalPages %}
+                  <li class="page-item {% if p == page %}active{% endif %}">
+                    <a class="page-link" href="#" data-page="{{ p }}">{{ p }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+          
+              {% if page < totalPages - 1 %}
+                {% if page < totalPages - 2 %}
+                  <!-- Ellipsis -->
+                  <li class="page-item disabled">
+                    <a class="page-link" href="#">...</a>
+                  </li>
+                {% endif %}
+                <!-- Last Page -->
+                <li class="page-item">
+                  <a class="page-link" href="#" data-page="{{ totalPages }}">{{ totalPages }}</a>
+                </li>
+              {% endif %}
+          
+              {% if page < totalPages %}
+                <!-- Next Button -->
+                <li class="page-item">
+                  <a class="page-link" href="#" data-page="{{ page + 1 }}">&raquo;</a>
+                </li>
+              {% endif %}
+            </ul>
+        </div>
+
+
+    </div>
+             
+        </div>
+        <!-- /.card -->
+    </div>
+    <!-- /.col -->
+    </div>
+    {% endif %}
+</div>
+
+
+{% endblock %}
+
+<!-- </script> -->
+ {% block scripts %}
+ <!-- DataTables  & Plugins -->
+<script src="/static/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="/static/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+<script src="/static/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+<script src="/static/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+<script src="/static/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+<script src="/static/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+<script src="/static/plugins/jszip/jszip.min.js"></script>
+<script src="/static/plugins/pdfmake/pdfmake.min.js"></script>
+<script src="/static/plugins/pdfmake/vfs_fonts.js"></script>
+<script src="/static/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+<script src="/static/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+<script src="/static/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+<script>
+    const periods = {{ periods | tojson }};
+    const examYearSelect = document.getElementById("exam-year");
+    const examQuarterSelect = document.getElementById("exam-quarter");
+    const selectedQuarter = "{{ examQuarter|default('') }}"; // Use the posted quarter if available
+
+    // Function to populate quarters based on the selected year
+    function populateQuarters(year) {
+        examQuarterSelect.innerHTML = "";  // Clear existing options
+        if (periods[year]) {
+            periods[year].forEach(quarter => {
+                const option = document.createElement("option");
+                option.value = quarter;
+                option.textContent = quarter;
+                if (quarter === selectedQuarter) {
+                    option.selected = true; // Mark the selected quarter
+                }
+                examQuarterSelect.appendChild(option);
+            });
+        }
+    }
+
+    // Event listener to update quarters when a new year is selected
+    examYearSelect.addEventListener("change", function() {
+        populateQuarters(examYearSelect.value);
+    });
+
+    // Initial population of quarters for the first selected year
+    document.addEventListener("DOMContentLoaded", () => {
+        const defaultYear = examYearSelect.value;
+        populateQuarters(defaultYear);
+    });
+</script>
+<script>
+    const is_prod = "{{ is_prod }}" == "True";
+    var regionListUrl = "";
+    if (is_prod){
+        regionListUrl = "{{ https_url_for(request,'region_list') }}";
+    }
+    else{
+        regionListUrl = "{{ url_for('region_list') }}";
+    }
+    // Define the provided values
+    const providedTerritory = "{{ territory }}";
+    var providedRegion = "{{ region }}";
+    providedRegion =  providedRegion.replace(/&#39;/g, "'");
+    const providedExamYear = "{{ examYear }}";  // Make sure to pass examYear to the template
+    const providedExamQuarter = "{{ examQuarter }}";  // Make sure to pass examQuarter to the template
+
+    function fetchSchoolList(territory, examYear, examQuarter, selectedRegion) {
+        const regionSelect = document.getElementById('region');
+
+        // Clear current options and set the default option
+        regionSelect.innerHTML = '<option value="" selected>Tumanni tanlang</option>';
+
+        if (territory && examYear && examQuarter) {
+            fetch(regionListUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    territory: territory,
+                    examYear: examYear,
+                    examQuarter: examQuarter
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data && Array.isArray(data)) {
+                        // Populate the school select with options from the array
+                        data.forEach(regionName => {
+                            const option = document.createElement('option');
+                            option.value = regionName;
+                            option.textContent = regionName;
+
+                            // Set the option as selected if it matches provided school
+                            if (regionName === selectedRegion) {
+                                option.selected = true;
+                            }
+                            regionSelect.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error fetching school list:', error));
+        }
+    }
+
+    // Event listener for territory selection change
+    document.getElementById('territory').addEventListener('change', function () {
+        const territory = this.value;
+        const examYear = document.getElementById('exam-year').value;
+        const examQuarter = document.getElementById('exam-quarter').value;
+
+        fetchSchoolList(territory, examYear, examQuarter, "");
+    });
+
+    // Automatically fetch school list if values are provided
+    document.addEventListener('DOMContentLoaded', function () {
+        if (providedTerritory && providedExamYear && providedExamQuarter) {
+            fetchSchoolList(providedTerritory, providedExamYear, providedExamQuarter, providedRegion);
+        }
+    });
+</script>
+<script>
+    {% if school_results and school_results | length > 0 %}
+    document.addEventListener("DOMContentLoaded", function () {
+      const pagination = document.getElementById("pagination");
+
+      var is_prod = "{{ is_prod }}" == "True";
+      var schools_api = "";
+      if (is_prod){
+        schools_api = "{{ https_url_for(request,'schools') }}";
+      }
+      else{
+        schools_api = "{{ url_for('schools') }}";
+      }
+  
+      pagination.addEventListener("click", function (event) {
+        event.preventDefault();
+        const target = event.target;
+  
+        if (target.tagName === "A" && target.dataset.page) {
+          const page = target.dataset.page;
+  
+          // Collect necessary form data (if applicable)
+          const formData = new FormData();
+          examYear = document.getElementById("exam-year").value;
+          examQuarter = document.getElementById("exam-quarter").value;
+          territory = document.getElementById("territory").value;
+          region = document.getElementById("region").value;
+          studyClass = document.getElementById("studyClass").value;
+
+          formData.append("page", page);
+          formData.append("examYear", examYear);
+          formData.append("examQuarter", examQuarter);
+          formData.append("territory", territory);
+          formData.append("region", region);
+          formData.append("studyClass", studyClass);
+  
+          // Send request to the API
+        fetch(schools_api, {
+          method: "POST",
+          body: formData,
+        })
+        .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.text(); // Get the HTML response
+          })
+          .then((html) => {
+            console.log("Received HTML from API:", html);
+
+            // Parse the returned HTML
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, "text/html");
+
+            // Update the table content
+            const newTable = doc.querySelector(".card-body table");
+            const currentTable = document.querySelector(".card-body table");
+
+            if (newTable && currentTable) {
+              currentTable.innerHTML = newTable.innerHTML;
+              console.log("Table updated successfully.");
+            } else {
+              console.error("Table not found in the response.");
+            }
+
+            // Update pagination links
+            const newPagination = doc.querySelector("#pagination");
+            if (newPagination) {
+              pagination.innerHTML = newPagination.innerHTML;
+              console.log("Pagination updated successfully.");
+            } else {
+              console.error("Pagination not found in the response.");
+            }
+          })
+          .catch((error) => {
+            console.error("Error during fetch:", error);
+        });
+        }
+      });
+    });
+    {% endif %}
+</script>
+
+{% endblock %}
+
+

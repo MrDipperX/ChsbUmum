@@ -1,0 +1,1153 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="/static/plugins/select2/css/select2.min.css">
+<link rel="stylesheet" href="/static/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="<div class=" container-fluid">
+    <div class="col-12"></div>
+        <!-- Default box -->
+        <div class="card my-card">
+          <div class="card-body">
+            
+          </div>
+          <!-- /.card-body -->
+        </div>
+        <!-- /.card -->
+    </div>
+
+    <div class="row">
+
+        <div class="box d-flex w-100 col-3">
+            <div class="card col">
+
+                <div class="card-header">
+                    <h3 class="card-title">{{ title }}</h3>
+
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <button type="button" class="btn btn-tool" data-card-widget="remove">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-11">
+                            <form {% if is_prod%}action="{{ https_url_for(request,'compare') }}"{%else%}action="{{ url_for('compare') }}"{%endif%} method="POST">
+                                <div class="form-group">
+                                    <label>O'quv yili</label>
+                                    <select id="exam-year" name="examYear" class="form-control select2" style="width: 100%;">
+                                        {% for year, quarters in periods.items() %}
+                                            {% if examYear %}
+                                                <option value="{{ year }}" {% if year == examYear %}selected="selected"{% endif %}>{{ year }}</option>
+                                            {% else %}
+                                                <option value="{{ year }}" {% if loop.first %}selected="selected"{% endif %}>{{ year }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                    
+                                    <label for="firstQuarter">Choraklar boyicha qiyoslash:</label>
+                                    <select id="firstQuarter" name="firstQuarter" class="form-control select2" style="width: 100%;">
+                                        <!-- Options populated dynamically -->
+                                    </select>
+
+                                    <!-- New select for the secondary quarter -->
+                                    <div id="secondary-select-container" style="display: none;">
+                                        <label for="secondQuarter"></label>
+                                        <select id="secondQuarter" name="secondQuarter" class="form-control select2" style="width: 100%;">
+                                            <!-- Options will be dynamically populated -->
+                                        </select>
+                                    </div>
+                                    <label for="territory">Hudud:</label>
+                                    <select id="territory" name="territory" class="form-control select2"
+                                        style="width: 100%;">
+                                        {% for val, key in all_territories.items() %}
+                                        <option value="{{ val }}" {% if val==territory %}selected="selected" {% endif %}>{{
+                                            key }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="region">Tuman:</label>
+                                    <select id="region" name="region" class="form-control select2" style="width: 100%;">
+                                        <option value="" selected>Barcha tumanlar</option> <!-- Default option -->
+                                    </select>
+                                    <label for="school">Maktab:</label>
+                                    <select id="school" name="school" class="form-control select2" style="width: 100%;">
+                                        <option value="" selected>Barcha maktablar</option> <!-- Default option -->
+
+                                    </select>
+                                    <label for="studyClass">Sinf:</label>
+                                    <select id="studyClass" name="studyClass" class="form-control select2"
+                                        style="width: 100%;">
+                                        {% for val, key in all_classes.items() %}
+                                        <option value="{{ val }}" {% if val==studyClass %}selected="selected" {% endif %}>{{
+                                            key }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="subject">Fan:</label>
+                                    <select id="subject" name="subject" class="form-control select2" style="width: 100%;">
+                                        {% for val, key in all_subjects.items() %}
+                                        <option value="{{ val }}" {% if val==subject %}selected="selected" {% endif %}>{{
+                                            key }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="examMethod">Sinov turi:</label>
+                                    <select id="examMethod" name="examMethod" class="form-control select2"
+                                        style="width: 100%;">
+                                        {% for val, key in all_exam_methods.items() %}
+                                        <option value="{{ val }}" {% if val==examMethod %}selected="selected" {% endif
+                                            %}>{{ key }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit" class="btn btn-primary" style="margin-top: 1em;">Saralash</button>
+                
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                     <!-- /.row -->
+                </div>
+
+                <!-- /.card-body -->
+            </div>
+        </div>
+
+        <div class="box d-flex flex-column w-100 col">
+            <div class="row w-100 d-flex align-items-stretch" style="margin-bottom: 1em;">
+                {% if exam_method_results and exam_method_results | length > 0 %}
+                <div class="col-7 h-100">
+                    <!-- PIE CHART -->
+                    <div class="card card-success h-100">
+                        <div class="card-header">
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="pieChartsRow" class="d-flex flex-wrap justify-content-start mb-4"></div>
+                        </div>
+                    </div>
+                </div>
+        
+                <div class="col-5 h-100">
+                    <div class="card card-success h-100">
+                        <div class="card-header">
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart">
+                                <div id="barChartsRow" class="d-flex flex-wrap justify-content-start"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+
+
+
+    <div class="row">
+
+        {% if study_class_results and study_class_results | length > 0 %}
+        <div class="col-md-6">
+            <div class="card card-success">
+                <div class="card-header">
+
+
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <button type="button" class="btn btn-tool" data-card-widget="remove">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart">
+                        <div id="barStudyClassChart" class="d-flex flex-wrap justify-content-start"></div>
+                    </div>
+                </div>
+                <!-- /.card-body -->
+            </div>
+            <!-- /.card -->
+            <!-- /.card -->
+        </div>
+        {%endif%}
+
+        {% if some_subject_result and some_subject_result | length > 0 %}
+        <div class="col-md-6">
+            <div class="card card-success">
+                <div class="card-header">
+
+
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <button type="button" class="btn btn-tool" data-card-widget="remove">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart">
+                        <div id="barSomeSubjectChart" class="d-flex flex-wrap justify-content-start"></div>
+                    </div>
+                </div>
+                <!-- /.card-body -->
+            </div>
+            <!-- /.card -->
+            <!-- /.card -->
+        </div>
+        {% endif %}
+    </div>
+
+    {% if avg_by_territory and avg_by_territory | length > 0 %}
+    <div class="col h-100">
+        <div class="card card-success h-100">
+            <div class="card-header">
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button type="button" class="btn btn-tool" data-card-widget="remove">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart">
+                    <div id="barTerritoryChart" class="d-flex flex-wrap justify-content-start"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+
+{% endblock %}
+
+<!-- </script> -->
+{% block scripts %}
+<!-- DataTables  & Plugins -->
+<script src="/static/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="/static/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+<script src="/static/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+<script src="/static/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+<script src="/static/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+<script src="/static/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+<script src="/static/plugins/jszip/jszip.min.js"></script>
+<script src="/static/plugins/pdfmake/pdfmake.min.js"></script>
+<script src="/static/plugins/pdfmake/vfs_fonts.js"></script>
+<script src="/static/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+<script src="/static/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+<script src="/static/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+<script src="/static/plugins/chart.js/Chart.min.js"></script>
+<script src="/static/plugins/chart.js/chartjs-plugin-datalabels.min.js"></script>
+<script>
+    var periods = {{ periods | tojson }};
+    var is_prod = "{{ is_prod }}" == "True";
+    var regionListUrl = "";
+    if (is_prod){
+        regionListUrl = "{{ https_url_for(request,'region_list') }}";
+    }
+    else{
+        regionListUrl = "{{ url_for('region_list') }}";
+    }
+    // Define the provided values
+    var providedTerritory = "{{ territory }}";
+    var providedRegion = "{{ region }}";
+    providedRegion =  providedRegion.replace(/&#39;/g, "'");
+    var providedExamYear = "{{ examYear }}";  // Make sure to pass examYear to the template
+
+    function fetchRegionListForAllQuarters(territory, examYear, selectedRegion) {
+        const regionSelect = document.getElementById('region');
+
+        // Clear current options and set the default option
+        regionSelect.innerHTML = '<option value="" selected>Tumanni tanlang</option>';
+        if (document.getElementById('firstQuarter').value == "all"){
+            quarters = periods[examYear];
+        } else {
+            quarters = [document.getElementById('firstQuarter').value, document.getElementById('secondQuarter').value];
+        }
+
+        if (territory && examYear && quarters) {
+            const examQuarters = quarters;
+            const regionPromises = examQuarters.map(examQuarter => {
+                return fetch(regionListUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        territory: territory,
+                        examYear: examYear,
+                        examQuarter: examQuarter
+                    })
+                })
+                    .then(response => response.json())
+                    .catch(error => {
+                        console.error(`Error fetching regions for quarter ${examQuarter}:`, error);
+                        return [];
+                    });
+            });
+
+            // Process all responses
+            Promise.all(regionPromises).then(results => {
+                // Filter out invalid or empty responses
+                const validResults = results.filter(result => Array.isArray(result) && result.length > 0);
+
+                if (validResults.length === 0) {
+                    console.warn("No valid regions returned for any quarter.");
+                    return;
+                }
+
+                // Intersect all valid regions from different quarters
+                const commonRegions = validResults.reduce((common, current) => {
+                    if (!common) return current; // Initialize with the first valid result
+                    return common.filter(region => current.includes(region));
+                }, null);
+
+                // If no common regions are found
+                if (!commonRegions || commonRegions.length === 0) {
+                    console.warn("No common regions found across all quarters.");
+                    return;
+                }
+
+                // Populate the region select with common regions
+                commonRegions.forEach(regionName => {
+                    const option = document.createElement('option');
+                    option.value = regionName;
+                    option.textContent = regionName;
+
+                    // Set the option as selected if it matches the provided region
+                    if (regionName === selectedRegion) {
+                        option.selected = true;
+                    }
+                    regionSelect.appendChild(option);
+                });
+            }).catch(error => {
+                console.error("Error fetching regions for all quarters:", error);
+            });
+        }
+    }
+
+    // Event listener for territory or exam year selection change
+    document.getElementById('territory').addEventListener('change', function () {
+        const territory = this.value;
+        const examYear = document.getElementById('exam-year').value;
+
+        fetchRegionListForAllQuarters(territory, examYear, "");
+    });
+
+    document.getElementById('exam-year').addEventListener('change', function () {
+        const territory = document.getElementById('territory').value;
+        const examYear = this.value;
+
+        fetchRegionListForAllQuarters(territory, examYear, "");
+    });
+
+    // Automatically fetch region list if values are provided
+    document.addEventListener('DOMContentLoaded', function () {
+        if (providedTerritory != 'None' && providedExamYear != 'None') {
+            fetchRegionListForAllQuarters(providedTerritory, providedExamYear, providedRegion);
+        }
+    });
+</script>
+<script>
+    var is_prod = "{{ is_prod }}" == "True";
+    var schoolListUrl = "";
+    if (is_prod){
+        schoolListUrl = "{{ https_url_for(request,'school_list') }}";
+    }
+    else{
+        schoolListUrl = "{{ url_for('school_list') }}";
+    }
+    // Define the provided values
+    var providedTerritory = "{{ territory }}";
+    var providedRegion = "{{ region }}";
+    var providedSchool = "{{ school }}";
+    var providedExamYear = "{{ examYear }}";  // Make sure to pass examYear to the template
+    providedSchool =  providedSchool.replace(/&#39;/g, "'");
+
+    function fetchSchoolListForAllQuarters(territory, examYear, region, selectedSchool) {
+        const schoolSelect = document.getElementById('school');
+
+        // Clear current options and set the default option
+        schoolSelect.innerHTML = '<option value="" selected>Maktabni Tanlang</option>';
+
+        if (document.getElementById('firstQuarter').value == "all"){
+            quarters = periods[examYear];
+        } else {
+            quarters = [document.getElementById('firstQuarter').value, document.getElementById('secondQuarter').value];
+        }
+
+        if (territory && examYear && region && quarters) {
+            const examQuarters = quarters;
+
+            // Send a request for each quarter
+            const schoolPromises = examQuarters.map(examQuarter => {
+                return fetch(schoolListUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        territory: territory,
+                        examYear: examYear,
+                        examQuarter: examQuarter,
+                        region: region
+                    })
+                })
+                    .then(response => response.json())
+                    .catch(error => {
+                        console.error(`Error fetching schools for quarter ${examQuarter}:`, error);
+                        return [];
+                    });
+            });
+
+            // Process all responses
+            Promise.all(schoolPromises).then(results => {
+                // Filter out invalid or empty responses
+                const validResults = results.filter(result => Array.isArray(result) && result.length > 0);
+
+                if (validResults.length === 0) {
+                    console.warn("No valid school data returned for any quarter.");
+                    return;
+                }
+
+                // Intersect all valid school lists from different quarters
+                const commonSchools = validResults.reduce((common, current) => {
+                    if (!common) return current; // Initialize with the first valid result
+                    return common.filter(school => current.includes(school));
+                }, null);
+
+                // If no common schools are found
+                if (!commonSchools || commonSchools.length === 0) {
+                    console.warn("No common schools found across all quarters.");
+                    return;
+                }
+
+                // Populate the school select with common schools
+                commonSchools.forEach(schoolName => {
+                    const option = document.createElement('option');
+                    option.value = schoolName;
+                    option.textContent = schoolName;
+
+                    // Set the option as selected if it matches the provided school
+                    if (schoolName === selectedSchool) {
+                        option.selected = true;
+                    }
+                    schoolSelect.appendChild(option);
+                });
+            }).catch(error => {
+                console.error("Error fetching schools for all quarters:", error);
+            });
+        }
+    }
+
+    // Event listener for region selection change
+    document.getElementById('region').addEventListener('change', function () {
+        const territory = document.getElementById('territory').value;
+        const examYear = document.getElementById('exam-year').value;
+        const region = this.value;
+
+        fetchSchoolListForAllQuarters(territory, examYear, region, "");
+    });
+
+    // Automatically fetch school list if values are provided
+    document.addEventListener('DOMContentLoaded', function () {
+        if (providedTerritory != 'None' && providedRegion != 'None' && providedExamYear != 'None') {
+            fetchSchoolListForAllQuarters(providedTerritory, providedExamYear, providedRegion, providedSchool);
+        }
+    });
+</script>
+<script>
+    var periods = {{ periods | tojson }};
+    const examYearSelect = document.getElementById("exam-year");
+    const examQuarterSelect = document.getElementById("firstQuarter");
+    const secondarySelectContainer = document.getElementById("secondary-select-container");
+    const secondaryQuarterSelect = document.getElementById("secondQuarter");
+
+    const selectedQuarter = "{{ firstQuarter }}" // Use the posted quarter if available
+    const selectedSecondQuarter = "{{ secondQuarter }}";
+
+    // Function to populate quarters based on the selected year
+    function populateQuarters(year) {
+        examQuarterSelect.innerHTML = ""; // Clear existing options
+
+        // Add the "Barcha choraklar" option
+        const allOption = document.createElement("option");
+        allOption.value = "all";
+        allOption.textContent = "Barcha choraklar";
+        examQuarterSelect.appendChild(allOption);
+
+        // Add other quarters dynamically
+        if (periods[year]) {
+            periods[year].forEach(quarter => {
+                const option = document.createElement("option");
+                option.value = quarter;
+                option.textContent = quarter;
+                if (quarter === selectedQuarter) {
+                    option.selected = true; // Mark the selected quarter
+                }
+                examQuarterSelect.appendChild(option);
+            });
+        }
+    }
+
+    function validateSecondarySelect(firstQuarter) {
+        if (firstQuarter === "all") {
+            // Clear and disable the secondary select if "all" is selected
+            secondaryQuarterSelect.value = ""; // Clear the value
+            secondaryQuarterSelect.setAttribute("disabled", "true");
+        } else {
+            // Enable the secondary select if a specific quarter is selected
+            secondaryQuarterSelect.removeAttribute("disabled");
+        }
+    }
+    // Function to populate the secondary quarter select
+    function populateSecondaryQuarters(selected) {
+        secondaryQuarterSelect.innerHTML = ""; // Clear existing options
+
+        const year = examYearSelect.value;
+        if (periods[year]) {
+            periods[year].forEach(quarter => {
+                if (quarter !== selected) {
+                    const option = document.createElement("option");
+                    option.value = quarter;
+                    option.textContent = quarter;
+                    if (quarter === selectedSecondQuarter) {
+                        option.selected = true; // Mark the selected secondary quarter
+                    }
+                    secondaryQuarterSelect.appendChild(option);
+                }
+            });
+        }
+
+        // Show or hide the secondary select container
+        secondarySelectContainer.style.display = selected === "all" ? "none" : "block";
+}
+
+    // Event listener to update quarters when a new year is selected
+    examYearSelect.addEventListener("change", function () {
+        populateQuarters(examYearSelect.value);
+        populateSecondaryQuarters("all"); // Reset the secondary select
+    });
+
+    // Event listener to update the secondary select when a quarter is selected
+    examQuarterSelect.addEventListener("change", function () {
+        populateSecondaryQuarters(examQuarterSelect.value);
+        validateSecondarySelect(examQuarterSelect.value);
+    });
+
+    // Initial population of quarters for the first selected year
+    document.addEventListener("DOMContentLoaded", () => {
+        const defaultYear = examYearSelect.value;
+        populateQuarters(defaultYear);
+        if (selectedQuarter !== "all" && selectedQuarter !== "" && selectedQuarter !== null) {
+            populateSecondaryQuarters(selectedQuarter);
+            validateSecondarySelect(selectedQuarter);
+        } 
+        else {
+            populateSecondaryQuarters("all");
+            validateSecondarySelect("all");
+        }
+    });
+
+</script>
+<script>
+    {% if exam_method_results and exam_method_results | length > 0 %}
+        var examMethodResults = {{ exam_method_results | safe }};
+        const exam_methods_dict = { "on": "Online", "off": "Offline" };
+        const methods_colors = { "on": "rgba(30, 58, 138, 0.9)", "off": "rgba(147, 197, 253, 0.9)" };
+        var quarters = {"1": "I", "2": "II", "3": "III", "4": "IV"};
+
+        // Reference the rows for pie and bar charts
+        var pieChartsRow = document.getElementById('pieChartsRow');
+        var barChartsRow = document.getElementById('barChartsRow');
+
+        var barChartDatasets = [];
+        var ChartLabels = [];
+        var onlineData = []; // Data for "Online"
+        var offlineData = []; // Data for "Offline"
+
+
+        Object.keys(examMethodResults).forEach((key) => {
+            var groupResults = examMethodResults[key];
+
+            // Calculate total participants for the group
+            var totalParticipants = examMethodResults[key][0]['students_count'];
+
+            /** PIE CHART **/
+            var pieChartDiv = document.createElement('div');
+            pieChartDiv.className = 'pie-chart-container text-center';
+            pieChartDiv.style.width = '50%'; 
+
+            var pieTitle = document.createElement('h5');
+            pieTitle.innerHTML = `Sinov turi <br />${quarters[key]} - CHSB<br />`;
+            pieTitle.className = 'text-center';
+            pieChartDiv.appendChild(pieTitle);
+
+            var pieSummary = document.createElement('div');
+            pieSummary.innerHTML = `
+                <h6 class="text-center">Jami qatnashganlar <br /><b>${totalParticipants}</b></h6>
+            `;
+            pieChartDiv.appendChild(pieSummary);
+
+            var pieCanvas = document.createElement('canvas');
+            pieCanvas.id = `pieChart-${key}`;
+            pieCanvas.style.height = '100%';
+            pieCanvas.style.maxWidth = '100%';
+            pieCanvas.style.maxHeight = '200px';
+            pieCanvas.style.minHeight = '100px';
+            pieChartDiv.appendChild(pieCanvas);
+
+            var countsDiv = document.createElement('div');
+            countsDiv.className = 'row text-center';
+            groupResults.forEach(item => {
+                var countCol = document.createElement('div');
+                countCol.className = 'col-6 callout';
+                countCol.innerHTML = `
+                    <p>${exam_methods_dict[item.exam_method]}: <span><b>${item.count} ta</b></span></p>
+                `;
+                countsDiv.appendChild(countCol);
+            });
+            pieChartDiv.appendChild(countsDiv);
+
+            pieChartsRow.appendChild(pieChartDiv);
+
+            // Prepare data for the pie chart
+            var pieLabels = groupResults.map(item => exam_methods_dict[item.exam_method]);
+            var pieData = groupResults.map(item => item.percentage);
+            var pieColors = groupResults.map(item => methods_colors[item.exam_method]);
+            var counts = groupResults.map(item => item.count);
+
+            var pieChartCanvas = document.getElementById(`pieChart-${key}`).getContext('2d');
+            var pieChartData = {
+                labels: pieLabels,
+                datasets: [{
+                    data: pieData,
+                    backgroundColor: pieColors,
+                    counts: counts
+                }]
+            };
+
+            if (pieData.length == 1) {
+                pieChartData.datasets[0].borderWidth = 0; // Remove border for single data
+            }
+
+            var pieChartOptions = {
+                maintainAspectRatio: true,
+                responsive: true,
+                cutoutPercentage: 1, // Small cutout for doughnut effect
+                animation: {
+                    animateScale: true
+                },
+                elements: {
+                    arc: {
+                        roundedCornersFor: 0 // Helps smooth edges in some cases
+                    }
+                },
+                plugins: {
+                    datalabels: {
+                        color: '#fff',
+                        font: {
+                            weight: 'bold',
+                            size: 11
+                        },
+                        formatter: function (value) {
+                            return value + '%';
+                        }
+                    }
+                },
+                tooltips: {
+                    callbacks: {
+                        label: function (tooltipItem, data) {
+                            var dataset = data.datasets[tooltipItem.datasetIndex];
+                            var label = data.labels[tooltipItem.index];
+                            var count = dataset.counts[tooltipItem.index]; // Use the count data for tooltip
+                            var percentage = dataset.data[tooltipItem.index];
+                            return `${label}: ${count} (${percentage}%)`;
+                        }
+                    }
+                }
+            };
+
+            new Chart(pieChartCanvas, {
+                type: 'pie',
+                data: pieChartData,
+                options: pieChartOptions,
+                plugins: [ChartDataLabels]
+            });
+
+
+            var groupResults = examMethodResults[key];
+
+            // Add label for the quarter
+            ChartLabels.push(`${quarters[key]}-CHSB`);
+
+            // Extract data for "online" and "offline"
+            var online = groupResults.find(item => item.exam_method === "on");
+            var offline = groupResults.find(item => item.exam_method === "off");
+
+            // Push data into respective arrays
+            onlineData.push(online ? online.result : 0); // Default to 0 if no data
+            offlineData.push(offline ? offline.result : 0); // Default to 0 if no data
+        });
+
+        /** BAR CHART **/
+        var barChartDiv = document.createElement('div');
+        barChartDiv.className = 'bar-chart-container text-center';
+        barChartDiv.style.width = '100%';
+
+        var barTitle = document.createElement('h5');
+        barTitle.innerHTML = `Sinov turi bo'yicha natijalar`;
+        barTitle.className = 'text-center';
+        barChartDiv.appendChild(barTitle);
+
+        var barCanvas = document.createElement('canvas');
+        barCanvas.id = `barChartExamMethod`;
+        barCanvas.style.height = '100%';
+        barCanvas.style.maxWidth = '100%';
+        barCanvas.style.maxHeight = '200px';
+        barCanvas.style.minHeight = '100px';
+        barChartDiv.appendChild(barCanvas);
+
+        barChartsRow.appendChild(barChartDiv);
+
+        // Prepare data for the bar chart
+        var barChartData = {
+            labels: ChartLabels, // Quarters as labels
+            datasets: [
+                {
+                    label: 'Online',
+                    data: onlineData, // Results for "Online"
+                    backgroundColor: methods_colors["on"]
+                },
+                {
+                    label: 'Offline',
+                    data: offlineData, // Results for "Offline"
+                    backgroundColor: methods_colors["off"]
+                }
+            ]
+        };
+
+        var barChartOptions = {
+            maintainAspectRatio: true,
+            responsive: true,
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true, // Start y-axis from 0,
+                        max : 100
+                    }
+                }]
+            },
+            plugins: {
+                datalabels: {
+                    anchor: 'end',
+                    align: 'top',
+                    color: '#000', // Label color
+                    font: {
+                        weight: 'bold',
+                        size: 12
+                    },
+                    formatter: function (value) {
+                        return value + '%'; // Format data labels as percentages
+                    }
+                }
+            }
+        };
+
+        // Create the bar chart
+        new Chart(document.getElementById(`barChartExamMethod`).getContext('2d'), {
+            type: 'bar',
+            data: barChartData,
+            options: barChartOptions,
+            plugins: [ChartDataLabels]
+        });
+    {% endif %}
+</script>
+<script>
+    {% if avg_by_territory and avg_by_territory | length > 0 %}
+        var avgByTerritory = {{ avg_by_territory | tojson }};
+
+        function shortenLabel(label) {
+                return label
+                    .replace("shahar", "sh.")   // Replace "shahar" with "sh."
+                    .replace("Respublikasi", "R.") // Replace "viloyati" with "v."
+                    .replace("viloyati", "v."); // Replace "viloyati" with "v."
+            }
+
+        const territoryLabels = []; // Territory names (x-axis labels)
+        const datasets = []; // Datasets for each quarter
+        var barTerritoryChart = document.getElementById('barTerritoryChart');
+        var quarters = {"1": "I", "2": "II", "3": "III", "4": "IV"};
+        var quarterColors = { "1": "rgba(50, 28, 138, 0.9)", "2": "rgba(50, 53, 42, 0.9)", "3": "rgba(30, 58, 138, 0.9)", "4": "rgba(147, 197, 253, 0.9)" }; // Colors per quarter
+
+        // Build territory labels and datasets
+        Object.keys(avgByTerritory).forEach((quarterKey) => {
+            const dataForQuarter = avgByTerritory[quarterKey];
+
+            // Add territory labels if not already added
+            dataForQuarter.forEach((entry) => {
+   
+                const shortenedLabel = shortenLabel(entry.key);
+                if (!territoryLabels.includes(shortenedLabel)) {
+                    territoryLabels.push(shortenedLabel);
+                    }
+                });
+
+            // Prepare dataset for the current quarter
+            const dataset = {
+                label: quarters[quarterKey] + " - CHSB", // e.g., "3-CHSB"
+                data: dataForQuarter.map(entry => entry.data), // Data values
+                backgroundColor: quarterColors[quarterKey], // Use quarter-specific color
+                borderWidth: 1
+            };
+            datasets.push(dataset);
+        });
+
+        /** Create Bar Chart **/
+        var barChartDiv = document.createElement('div');
+        barChartDiv.className = 'bar-chart-container text-center';
+        barChartDiv.style.width = '100%';
+
+        var barTitle = document.createElement('h5');
+        barTitle.innerHTML = `Umumiy CHSB natijalari hududlar bo'yicha`;
+        barTitle.className = 'text-center';
+        barChartDiv.appendChild(barTitle);
+
+        var barCanvas = document.createElement('canvas');
+        barCanvas.id = `barChartByTerritory`;
+
+        barCanvas.style.height = '350px';
+        barCanvas.style.maxWidth = '100%';
+        barCanvas.style.maxHeight = '350px';
+        barCanvas.style.minHeight = '350px';
+        barChartDiv.appendChild(barCanvas);
+
+        barTerritoryChart.appendChild(barChartDiv);
+
+        // Chart.js Data
+        const territoryChartData = {
+            labels: territoryLabels, // Territories as x-axis labels
+            datasets: datasets       // Grouped datasets for each quarter
+        };
+
+        // Chart.js Options
+        const territoryChartOptions = {
+            maintainAspectRatio: false,
+            responsive: true,
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true,// Start y-axis from 0
+                        max : 100
+                    }
+                }]
+            },
+            plugins: {
+                datalabels: {
+                    anchor: 'end', // Position the labels on the top of each bar
+                    align: 'top',
+                    color: '#000', // Color of the label text
+                    offset: 1,
+                    clamb: true,
+                    font: {
+                        size: 9
+                    },
+                    formatter: function (value, context) {
+                        return value + '%';
+                    },
+                    padding: {
+                        top: 5, // Add spacing to avoid clutter
+                        bottom: 5
+                    }
+                }
+            },
+            elements: {
+                point: {
+                    radius: 5, // Increase point size for better visibility
+                    hoverRadius: 7 // Highlight the point on hover
+                },
+                line: {
+                    tension: 0.4 // Add curve to the line for a smoother appearance
+                }
+            },
+        };
+
+        // Initialize Chart
+        new Chart(barCanvas.getContext('2d'), {
+            type: 'bar',
+            data: territoryChartData,
+            options: territoryChartOptions,
+            plugins: [ChartDataLabels]
+        });
+    {% endif %}
+</script>
+<script>
+    {% if study_class_results and study_class_results | length > 0 %}
+        var studyClassResults = {{ study_class_results | tojson }};
+        var quarters = {"1": "I", "2": "II", "3": "III", "4": "IV"};
+        const studyClassLabels = []; // Study class labels (x-axis)
+        const studyClassDatasets = []; // Datasets for each quarter
+        var quarterColors = { "1": "rgba(50, 28, 138, 0.9)", "2": "rgba(50, 53, 42, 0.9)", "3": "rgba(30, 58, 138, 0.9)", "4": "rgba(147, 197, 253, 0.9)" }; // Colors per quarter
+
+        // Build study class labels and datasets
+        Object.keys(studyClassResults).forEach((quarterKey) => {
+            const dataForQuarter = studyClassResults[quarterKey];
+
+            // Add study class labels if not already added
+            dataForQuarter.forEach((entry) => {
+                const formattedLabel = entry.studyclass + "-sinf";
+
+                if (!studyClassLabels.includes(formattedLabel)) {
+                    studyClassLabels.push(formattedLabel);
+                }
+            });
+
+            // Prepare dataset for the current quarter
+            const dataset = {
+                label: quarters[quarterKey] + " - CHSB", // e.g., "3-CHSB"
+                data: dataForQuarter.map(entry => entry.avg), // Data values
+                backgroundColor: quarterColors[quarterKey], // Use quarter-specific color
+                borderWidth: 1
+            };
+            studyClassDatasets.push(dataset);
+        });
+
+        /** Create Bar Chart **/
+        var barChartDiv = document.createElement('div');
+        barChartDiv.className = 'bar-chart-container text-center';
+        barChartDiv.style.width = '100%';
+
+        var barTitle = document.createElement('h5');
+        barTitle.innerHTML = `Sinflar kesimida umumiy CHSB natijalari`;
+        barTitle.className = 'text-center';
+        barChartDiv.appendChild(barTitle);
+
+        var barCanvas = document.createElement('canvas');
+        barCanvas.id = `barChartByStudyClass`;
+        barCanvas.style.height = '350px';
+        barCanvas.style.maxWidth = '100%';
+        barCanvas.style.maxHeight = '350px';
+        barCanvas.style.minHeight = '350px';
+        barChartDiv.appendChild(barCanvas);
+
+        // Append the chart to your container
+        document.getElementById('barStudyClassChart').appendChild(barChartDiv);
+
+        // Chart.js Data
+        const studyClassChartData = {
+            labels: studyClassLabels, // Study classes as x-axis labels
+            datasets: studyClassDatasets       // Grouped datasets for each quarter
+        };
+
+        // Chart.js Options
+        const studyClassChartOptions = {
+            maintainAspectRatio: false,
+            responsive: true,
+            scales: {
+                xAxes: [{
+                    ticks: {
+                        beginAtZero: true, // Start y-axis from 0
+                        max: 100 
+                    }
+                }],
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true, // Start y-axis from 0
+                        max: 100 
+                    }
+                }]
+            },
+            plugins: {
+                datalabels: {
+                    anchor: 'end', // Position the labels on the top of each bar
+                    align: 'right',
+                    color: '#000', // Color of the label text
+                    font: {
+                        size: 11
+                    },
+                    formatter: function (value, context) {
+                        return value + '%';
+                    }
+                }
+            }
+        };
+
+        // Initialize Chart
+        new Chart(barCanvas.getContext('2d'), {
+            type: 'horizontalBar',
+            data: studyClassChartData,
+            options: studyClassChartOptions,
+            plugins: [ChartDataLabels]
+        });
+    {% endif %}
+</script>
+<script>
+    {% if some_subject_result and some_subject_result | length > 0 %}
+        var someSubjectResult = {{ some_subject_result | tojson }};
+        var allSubjects = {{ all_subjects | tojson }};
+        var ChosenSubject = "{{ subject }}";
+        var subjectKeys = {{ subject_results_keys | tojson }};
+        var quarters = {"1": "I", "2": "II", "3": "III", "4": "IV"};
+        var quarterColors = { "1": "rgba(50, 28, 138, 0.9)", "2": "rgba(50, 53, 42, 0.9)", "3": "rgba(30, 58, 138, 0.9)", "4": "rgba(147, 197, 253, 0.9)" }; // Colors per quarter
+
+        const someSubjectDatasets = []; // Datasets for each quarter
+        const someSubjectLabels = []; // Subject names for x-axis
+
+        function reorderSubjects(subjectResult, subjectKeys) {
+            const orderedResult = {}; // Create a new ordered object
+
+            // Loop through `subjectKeys` to ensure the order
+            subjectKeys.forEach(key => {
+                if (key in subjectResult) { // Check if the key exists in the input data
+                    orderedResult[key] = subjectResult[key]; // Add it to the ordered object
+                }
+            });
+            return orderedResult;
+        }
+        // Reorder data for each quarter
+        Object.keys(someSubjectResult).forEach(quarterKey => {
+            someSubjectResult[quarterKey] = reorderSubjects(someSubjectResult[quarterKey], subjectKeys[quarterKey]);
+        });
+
+        // Build datasets and subject labels
+        Object.keys(someSubjectResult).forEach((quarterKey) => {
+            const quarterData = someSubjectResult[quarterKey];
+            const dataset = {
+                label: quarters[quarterKey] + " - CHSB", // e.g., "3-CHSB"
+                data: [],
+                backgroundColor: quarterColors[quarterKey],
+                borderColor: quarterColors[quarterKey],
+                fill: false,
+                borderWidth: 3,
+            };
+
+            Object.keys(quarterData).forEach((key) => {
+                // if (key !== "_avg") { // Exclude the general average
+                const subjectKey = key.replace("_avg", ""); // Remove "_avg" from the key
+                const subjectName = allSubjects[subjectKey]; // Map to readable name
+                if (!someSubjectLabels.includes(subjectName)) {
+                    someSubjectLabels.push(subjectName);
+                }
+                dataset.data.push(quarterData[key]); // Add data to the dataset
+                // }
+            });
+
+            dataset.fill = false; // Disable fill for line chart
+
+            someSubjectDatasets.push(dataset); // Add the dataset for the quarter
+        });
+
+        /** Create Bar Chart **/
+        var barChartDiv = document.createElement('div');
+        barChartDiv.className = 'bar-chart-container text-center';
+        barChartDiv.style.width = '100%';
+
+        var barTitle = document.createElement('h5');
+        barTitle.innerHTML = `Fanlar kesimida umumiy CHSB natijalari`;
+        barTitle.className = 'text-center';
+        barChartDiv.appendChild(barTitle);
+
+        var barCanvas = document.createElement('canvas');
+        barCanvas.id = `barChartBySomeSubjects`;
+        barCanvas.style.height = '350px';
+        barCanvas.style.maxWidth = '100%';
+        barCanvas.style.maxHeight = '350px';
+        barCanvas.style.minHeight = '350px';
+        barChartDiv.appendChild(barCanvas);
+
+        // Append the chart to your container
+        document.getElementById('barSomeSubjectChart').appendChild(barChartDiv);
+
+        // Chart.js Data
+        const someSubjectChartData = {
+            labels: someSubjectLabels, // Subjects as x-axis labels
+            datasets: someSubjectDatasets     // Grouped datasets for each quarter
+        };
+
+        // Chart.js Options
+        const someSubjectChartOptions = {
+            maintainAspectRatio: false,
+            responsive: true,
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true, // Start y-axis from 0
+                        max: 100,
+                    }
+                }],
+                xAxes: [{
+                    // gridLines: {
+                    //     display: false
+                    // },
+                    ticks: {
+                        autoSkip: false,
+                        callback: function (value, index, values) {
+                            // Check if the current label matches the ChosenSubject
+                            if (value === allSubjects[ChosenSubject]) {
+                                return '🟢' + value; // Highlight with an underline or emoji
+                            }
+                            return value; // Return normal labels for others
+                        }
+                    }
+                }]
+            },
+            plugins: {
+                datalabels: {
+                    display: true,
+                    anchor: 'end', // Position the labels on the top of each bar
+                    align: 'top',
+                    offset: 2,
+                    clamp: true,
+                    color: '#000', // Color of the label text
+                    font: {
+                        size: 11
+                    },
+                    formatter: function (value, context) {
+                        return value + '%';
+                    }
+                }
+            }
+        };
+
+
+        // Initialize Chart
+        new Chart(barCanvas.getContext('2d'), {
+            type: 'line',
+            data: someSubjectChartData,
+            options: someSubjectChartOptions,
+            plugins: [ChartDataLabels]
+        });
+    {% endif %}
+</script>
+
+{% endblock %}

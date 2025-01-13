@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title> Piima | Log in</title>
+
+  <!-- Google Font: Source Sans Pro -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="/static/plugins/fontawesome-free/css/all.min.css">
+  <!-- icheck bootstrap -->
+  <link rel="stylesheet" href="/static/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+  <!-- Theme style -->
+  <link rel="stylesheet" href="/static/dist/css/adminlte.min.css">
+  <style>
+    .login-logo img {
+      max-width:100%; /* Ensures the image scales within its container */
+      height: auto; /* Maintains the aspect ratio */
+      display: block; /* Removes inline spacing caused by the img tag */
+      margin: 0 auto; /* Centers the image horizontally */
+    }
+  
+    .login-logo {
+      margin-bottom: 20px; /* Adds some spacing below the logo */
+      text-align: center; /* Ensures the logo stays centered */
+    }
+  </style>
+</head>
+<body class="hold-transition login-page">
+<div class="login-box">
+    <div class="login-logo">
+        <img src="/static/dist/img/LogoHoriontalBlue.png" alt="">
+    </div>
+  <!-- /.login-logo -->
+  <div class="card">
+    <div class="card-body login-card-body">
+      <p class="login-box-msg">Kirish</p>
+
+      <form id="login-form" method="post">
+        <div class="input-group mb-3">
+          <input type="text" class="form-control" placeholder="Login" name="username" id="username">
+          <div class="input-group-append">
+            <div class="input-group-text">
+              <span class="fas fa-envelope"></span>
+            </div>
+          </div>
+        </div>
+        <div class="input-group mb-3">
+          <input type="password" class="form-control" placeholder="Parol" name="password" id="password">
+          <div class="input-group-append">
+            <button type="button" class="btn btn-outline-secondary toggle-password" id="togglePassword">
+                <i class="fas fa-eye"></i>
+            </button>
+          </div>
+        </div>
+        <button type="button" id="login-button" class="btn btn-primary btn-block">Kirish</button>
+          <!-- /.col -->
+      </form>
+
+      <!-- /.social-auth-links -->
+    </div>
+  </div>
+    <!-- /.login-card-body -->
+
+</div>
+<!-- /.login-box -->
+
+<!-- jQuery -->
+<script src="/static/plugins/jquery/jquery.js"></script>
+<!-- Bootstrap 4 -->
+<script src="/static/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<!-- AdminLTE App -->
+<script src="/static/dist/js/adminlte.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const togglePassword = document.getElementById('togglePassword');
+      const passwordField = document.getElementById('password');
+  
+      togglePassword.addEventListener('click', () => {
+        // Toggle the password visibility
+        const type = passwordField.type === 'password' ? 'text' : 'password';
+        passwordField.type = type;
+  
+        // Toggle the eye icon
+        togglePassword.innerHTML = type === 'password'
+          ? '<i class="fas fa-eye"></i>'
+          : '<i class="fas fa-eye-slash"></i>';
+      });
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        var Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000
+        });
+    
+
+      const loginButton = document.getElementById('login-button');
+      console.log(loginButton)
+  
+      loginButton.addEventListener('click', async (e) => {
+        e.preventDefault(); // Prevent default form submission
+  
+        // Get input values
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+  
+        // Check for empty fields
+        if (!username || !password) {
+            Toast.fire({
+                icon: 'error',
+                title: 'Lorem ipsum dolor sit amet, consetetur sadipscing elitr.'
+            })
+          return;
+        }
+  
+        // Determine the login URL
+        const isProd = "{{ is_prod }}".trim() === "True";
+        const loginUrl = isProd
+          ? "{{ https_url_for(request, 'login') }}"
+          : "{{ url_for('login') }}";
+
+        const HomeUrl = isProd
+          ? "{{ https_url_for(request, 'home') }}"
+          : "{{ url_for('home') }}";
+  
+        console.log('Login URL:', loginUrl);
+
+          // Send the POST request using fetch
+          const response = await fetch(loginUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify({ username, password }), // Send JSON payload
+          });
+          console.log('Response:', response); 
+  
+        //   if (!response.ok) {
+        //     // Parse error response
+        //     const errorData = await response.json();
+        //     let errorMessage = 'An unexpected error occurred. Please try again.';
+        //     if (errorData.detail) {
+        //       if (Array.isArray(errorData.detail)) {
+        //         errorMessage = errorData.detail[0]?.msg || errorMessage;
+        //       } else {
+        //         errorMessage = errorData.detail;
+        //       }
+        //     }
+  
+        //     throw new Error(errorMessage);
+        //   }
+
+          if (response.status == 200){
+            window.location.href = HomeUrl;
+          }
+          else if (response.status == 401){
+            Toast.fire({
+                icon: 'error',
+                title: 'Login yoki parol xato'
+            })
+          }
+          else {
+            Toast.fire({
+                icon: 'error',
+                title: 'Serverda xatolik'
+            });
+          }
+          
+      });
+    });
+</script>
+</body>
+</html>
