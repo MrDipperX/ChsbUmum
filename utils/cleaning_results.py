@@ -1,6 +1,8 @@
 from .const import all_subjects
 
 def clean_subjects(data):
+    if not data:
+        return []
     # Identify subjects to remove
     subjects_to_remove = set()
     if data:
@@ -18,7 +20,6 @@ def clean_subjects(data):
             entry.pop(subject, None)
     
     return data
-
 
 def clean_results_data(results_info):
     # Remove empty strings from the data

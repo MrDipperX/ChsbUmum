@@ -72,6 +72,13 @@
                                     <option value="{{ val }}" {% if val == studyClass %}selected="selected"{% endif %}>{{ key }}</option>
                                 {% endfor %}
                             </select>
+                            <label for="subject">Fan:</label>
+                            <select id="subject" name="subject" class="form-control select2" style="width: 100%;">
+                                {% for val, key in all_subjects.items() %}
+                                <option value="{{ val }}" {% if val==subject %}selected="selected" {% endif %}>{{
+                                    key }}</option>
+                                {% endfor %}
+                            </select>
 
                             <button type="submit" class="btn btn-primary" style="margin-top: 15px;">Saralash</button>
                         </div>
@@ -394,10 +401,10 @@
       var is_prod = "{{ is_prod }}" == "True";
       var students_api = "";
       if (is_prod){
-        students_api = "{{ https_url_for(request,'results') }}";
+        students_api = "{{ https_url_for(request,'students') }}";
       }
       else{
-        students_api = "{{ url_for('results') }}";
+        students_api = "{{ url_for('students') }}";
       }
   
       pagination.addEventListener("click", function (event) {
@@ -415,6 +422,7 @@
           region = document.getElementById("region").value;
           studyClass = document.getElementById("studyClass").value;
           school = document.getElementById("school").value;
+          subject = document.getElementById("subject").value;
 
           formData.append("page", page);
           formData.append("examYear", examYear);
@@ -423,6 +431,7 @@
           formData.append("region", region);
           formData.append("studyClass", studyClass);
           formData.append("school", school);
+          formData.append("subject", subject);
   
           // Send request to the API
          // Send request to the API

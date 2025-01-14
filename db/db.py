@@ -474,7 +474,7 @@ SELECT json_build_object(
             
     def get_school_results(self, school_request: SchoolRequest):
         # Base query with placeholders for studyClass and territory filters
-        query = """
+        base_query = """
             WITH rates AS (SELECT max_point_over_all, subject
                FROM um_rate
                WHERE exam_quarter = %s
@@ -547,16 +547,36 @@ SELECT json_build_object(
                           AND exam_year = %s
                           {territory_filter}
                         ORDER BY um_school.territory),
-                limited_school_results AS (
-                    SELECT * FROM school_results
-                    LIMIT 20 OFFSET ({page}-1) * 20
-                ),
+                        """
+        if school_request.subject:
+            limited_query = f"""
+                    limited_school_results AS (
+                        SELECT 
+                            school_id,
+                            region,
+                            school,
+                            {school_request.subject}
+                        FROM school_results
+                        ORDER BY {school_request.subject} DESC NULLS LAST
+                        LIMIT 20 OFFSET ({school_request.page}-1) * 20
+                    ),"""
+        else:
+            limited_query = f"""
+                    limited_school_results AS (
+                        SELECT * FROM school_results
+                        ORDER BY average DESC NULLS LAST
+                        LIMIT 20 OFFSET ({school_request.page}-1) * 20
+                    ),"""
+        
+        result_query = """
                 pages AS (
                     SELECT CEIL(COUNT(*) / 20.0) FROM school_results
                 )
 SELECT JSON_BUILD_OBJECT('school_results', (SELECT JSON_AGG(limited_school_results) FROM limited_school_results),
        'pages', (SELECT * FROM pages)) AS result;
             """
+        
+        query = base_query + limited_query + result_query
 
         
         # Extract the request parameters
@@ -571,8 +591,7 @@ SELECT JSON_BUILD_OBJECT('school_results', (SELECT JSON_AGG(limited_school_resul
         query = query.format(
             avg_key=avg_key,
             result_key=results_key,
-            territory_filter="AND territory = %s" if territory else "",
-            page=school_request.page
+            territory_filter="AND territory = %s" if territory else ""
         )
 
         # Build the parameter list for query execution
@@ -591,7 +610,7 @@ SELECT JSON_BUILD_OBJECT('school_results', (SELECT JSON_AGG(limited_school_resul
 
     def get_students_results(self, students_request: StudentRequest):
         with self.conn:
-            query = """
+            base_query = """
                 WITH rates AS (SELECT max_point_over_all, subject
                FROM um_rate
                WHERE exam_quarter = %s
@@ -661,36 +680,61 @@ SELECT JSON_BUILD_OBJECT('school_results', (SELECT JSON_AGG(limited_school_resul
                     AND (%s IS NULL OR um_school.territory = %s)
                     AND (%s IS NULL OR um_school.region = %s)
                     AND (%s IS NULL OR um_school.name = %s)
-                    AND (%s IS NULL OR studyclass = %s)),
+                    AND (%s IS NULL OR studyclass = %s)),"""
+            
+            limited_query = f"""
                 limited_school_results AS (SELECT *
                                 FROM student_results
-                                LIMIT 20 OFFSET (%s - 1) * 20),
-     pages AS (SELECT CEIL(COUNT(*) / 20.0)
-               FROM student_results)
-SELECT JSON_BUILD_OBJECT('results', JSON_AGG(
-        JSON_BUILD_OBJECT(
-                'region', region,
-                'school', name,
-                'full_name', full_name,
-                'class', study_class,
-                'average', average,
-                'math', math,
-                'mother_tongue_literature', mother_tongue_literature,
-                'literature', literature,
-                'mother_tongue', mother_tongue,
-                'russian', russian,
-                'algebra', algebra,
-                'geometry', geometry,
-                'physics', physics,
-                'chemistry', chemistry,
-                'biology', biology,
-                'english', english
-        )
-                                    ),
-       'total_pages', (SELECT * FROM pages)
-       ) AS result
-FROM limited_school_results ;
-                """
+                                ORDER BY { students_request.subject if students_request.subject  else 'average'} DESC NULLS LAST
+                                LIMIT 20 OFFSET ({students_request.page} - 1) * 20),
+                                """
+            
+            if students_request.subject:
+                result_query = f"""
+                    pages AS (SELECT CEIL(COUNT(*) / 20.0)
+                            FROM student_results)
+                SELECT JSON_BUILD_OBJECT('results', JSON_AGG(
+                        JSON_BUILD_OBJECT(
+                                'region', region,
+                                'school', name,
+                                'full_name', full_name,
+                                'class', study_class,
+                                '{students_request.subject}', {students_request.subject}
+                                
+                        )
+                                                    ),
+                    'total_pages', (SELECT * FROM pages)
+                    ) AS result
+                FROM limited_school_results ;
+                                """
+            else:
+                result_query = f"""
+                    pages AS (SELECT CEIL(COUNT(*) / 20.0)
+                            FROM student_results)
+                SELECT JSON_BUILD_OBJECT('results', JSON_AGG(
+                        JSON_BUILD_OBJECT(
+                                'region', region,
+                                'school', name,
+                                'full_name', full_name,
+                                'class', study_class,
+                                'average', average,
+                                'math', math,
+                                'mother_tongue_literature', mother_tongue_literature,
+                                'literature', literature,
+                                'mother_tongue', mother_tongue,
+                                'russian', russian,
+                                'algebra', algebra,
+                                'geometry', geometry,
+                                'physics', physics,
+                                'chemistry', chemistry,
+                                'biology', biology,
+                                'english', english
+                        )
+                                                    ),
+                    'total_pages', (SELECT * FROM pages)
+                    ) AS result
+                FROM limited_school_results ;
+                                """
             
             # print(students_request)
             
@@ -703,8 +747,9 @@ FROM limited_school_results ;
                 students_request.region, students_request.region,
                 students_request.school, students_request.school,
                 students_request.study_class, students_request.study_class,
-                students_request.page,
             ]
+
+            query = base_query + limited_query + result_query
 
             # Execute the query
             with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
@@ -832,6 +877,7 @@ FROM limited_school_results ;
                 WHERE {'exam_method = %(exam_method)s' if params.exam_method else '1=1'}
                 AND {'studystream = %(study_class)s' if params.study_class else '1=1'}
                 AND {'territory = %(territory)s' if params.territory else '1=1'}
+                AND {'region = %(region)s' if params.region else '1=1'}
                 GROUP BY {'territory' if not params.territory else 'school_id, name'}
                 {'HAVING AVG('+ params.subject + ') IS NOT NULL' if params.subject else ''}
             ),
@@ -846,6 +892,7 @@ FROM limited_school_results ;
                 FROM results
                 WHERE {'exam_method = %(exam_method)s' if params.exam_method else '1=1'}
                 AND {'territory = %(territory)s' if params.territory else '1=1'}
+                AND {'region = %(region)s' if params.region else '1=1'}
                 AND {'name = %(school)s' if params.school else '1=1'}
                 GROUP BY studystream
                 {'HAVING AVG('+ params.subject + ') IS NOT NULL' if params.subject else ''}
@@ -860,6 +907,7 @@ FROM limited_school_results ;
                 "exam_method": "exam_method",
                 "study_class": "studystream",
                 "territory": "territory",
+                "region": "region",
                 "school": "name"
             }.items() if getattr(params, model_field) is not None
         )
@@ -886,6 +934,7 @@ FROM limited_school_results ;
         column_map = {
             "study_class": "studystream",
             "territory": "territory",
+            "region": "region",
             "school": "name"  # `school` in model maps to `name` in the database
         }
 
@@ -957,8 +1006,6 @@ FROM limited_school_results ;
             ) AS results;
         """
 
-        print(query)
-
         # Execute the query
         with self.conn:
             with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
@@ -969,7 +1016,8 @@ FROM limited_school_results ;
                     "school": params.school,
                     "exam_method": params.exam_method,
                     "study_class": params.study_class,
-                    "subject": params.subject
+                    "subject": params.subject,
+                    "region" : params.region,
                 })
                 result = cursor.fetchone()
             
@@ -1215,6 +1263,7 @@ FROM limited_school_results ;
         column_map = {
             "study_class": "studystream",
             "territory": "territory",
+            "region": "region",
             "school": "name"  # `school` in model maps to `name` in the database
         }
 
@@ -1250,6 +1299,7 @@ FROM limited_school_results ;
                 "exam_method": "exam_method",
                 "study_class": "studystream",
                 "territory": "territory",
+                "region": "region",
                 "school": "name"
             }.items() if getattr(params, model_field) is not None
         )

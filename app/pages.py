@@ -111,6 +111,7 @@ async def read_root(request: Request, payload: dict = Depends(jwt_checker)):
         
         "all_classes": all_classes_dict, 
         "all_territories": all_territories_dict,
+        "all_subjects": all_subjects, 
         "is_prod": PROD})
 
 @app.get("/students", response_class=HTMLResponse, name="students")
@@ -125,7 +126,7 @@ async def read_root(request: Request, payload: dict = Depends(jwt_checker)):
 
     all_classes_dict = {"": "Barcha sinflar", **{k:k for k in all_classes}}
     all_territories_dict = {"": "Barcha hududlar", **{k:k for k in all_territories}}
-
+    
     return templates.TemplateResponse("student.html", {
         "request": request, 
         "title" : "Oʻquvchilar", 
@@ -133,6 +134,7 @@ async def read_root(request: Request, payload: dict = Depends(jwt_checker)):
         
         "all_classes": all_classes_dict, 
         "all_territories": all_territories_dict,
+        "all_subjects": all_subjects, 
         "is_prod": PROD
         })
 
@@ -227,11 +229,13 @@ async def read_school(request: Request, payload: dict = Depends(jwt_checker)):
 
                                           "all_classes": all_classes_dict,  
                                           "all_territories": all_territories_dict,
+                                          "all_subjects": all_subjects, 
                                           
                                           "examYear": school_results.exam_year,
                                           "examQuarter": school_results.exam_quarter,
                                           "territory": school_results.territory, 
                                           "studyClass": school_results.study_class,
+                                          "subject": school_results.subject,
                                           "page": school_results.page,
                                           "totalPages": total_pages,
                                           "is_prod": PROD}
@@ -273,6 +277,7 @@ async def read_students(request: Request, payload: dict = Depends(jwt_checker)):
 
                                         "all_classes": all_classes_dict, 
                                         "all_territories": all_territories_dict,
+                                        "all_subjects": all_subjects,
                                         
                                         "examYear": student_results.exam_year,
                                         "examQuarter": student_results.exam_quarter,
@@ -280,6 +285,7 @@ async def read_students(request: Request, payload: dict = Depends(jwt_checker)):
                                         "region": student_results.region,
                                         "studyClass": student_results.study_class, 
                                         "school": student_results.school,
+                                        "subject": student_results.subject,
                                         "page": student_results.page,
                                         "totalPages": total_pages,
                                         "is_prod": PROD}

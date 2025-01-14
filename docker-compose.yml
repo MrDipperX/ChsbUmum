@@ -10,7 +10,7 @@ services:
     container_name: piima_app
     env_file: .env  # Load environment variables from the .env file
     ports:
-      - "3131:3131"  # Map port 3131 to the host
+      - "3132:3132"  # Map port 3131 to the host
     networks:
       - piima_network
     restart: always  # Restart the container if it stops

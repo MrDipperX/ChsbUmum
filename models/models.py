@@ -29,6 +29,7 @@ class SchoolRequest(BaseModel):
     page: Optional[int] = Field(1, alias="page")
     territory: Optional[str] = Field(None, alias="territory")  # Make this optional
     region : Optional[str] = Field(None, alias="region")
+    subject : Optional[str] = Field(None, alias="subject")
     study_class: Optional[str] = Field(None, alias="studyClass") 
 
     @field_validator('exam_quarter')
@@ -43,7 +44,7 @@ class SchoolRequest(BaseModel):
             raise ValueError("examYear cannot be null or empty")
         return v
     
-    @field_validator('territory', 'page', 'region', 'study_class', mode='before')
+    @field_validator('territory', 'region', 'study_class', 'subject', mode='before')
     def convert_empty_string_to_none(cls, v):
         return None if v == "" else v
 
@@ -55,6 +56,7 @@ class StudentRequest(BaseModel):
     region : Optional[str] = Field(None, alias="region")
     study_class: Optional[str] = Field(None, alias="studyClass") 
     school: Optional[str] = Field(None, alias="school")
+    subject : Optional[str] = Field(None, alias="subject")
     page : Optional[int] = Field(1, alias="page")
 
     @field_validator('exam_quarter')
@@ -69,7 +71,7 @@ class StudentRequest(BaseModel):
             raise ValueError("examYear cannot be null or empty")
         return v
     
-    @field_validator('territory', 'study_class', 'region', 'school', mode='before')
+    @field_validator('territory', 'study_class', 'region', 'school', 'subject', mode='before')
     def convert_empty_string_to_none(cls, v):
         return None if v == "" else v
 
