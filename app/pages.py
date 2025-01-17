@@ -29,7 +29,6 @@ def https_url_for(request: Request, name: str, **path_params: Any) -> str:
     # Ensure it is a string before calling replace()
     return str(http_url).replace("http", "https", 1)
 
-
 security = HTTPBearer()
 
 def jwt_checker(request: Request):
@@ -62,7 +61,9 @@ async def read_root(request: Request, payload: dict = Depends(jwt_checker)):
     db = PgConn()
     # periods = db.get_available_periods()
 
-    year, quarter = db.get_last_year_and_quarter()['exam_year'], db.get_last_year_and_quarter()['exam_quarter']
+    year_and_quarter = db.get_last_year_and_quarter()
+
+    year, quarter = year_and_quarter['exam_year'], year_and_quarter['exam_quarter']
     base_request = BaseRequest(examQuarter=quarter, examYear=year)
 
     data = db.get_base_results(base_request)
@@ -88,7 +89,7 @@ async def read_root(request: Request, payload: dict = Depends(jwt_checker)):
                                                     "is_prod": PROD,
 
                                                     "examYear": year,
-                                                    "examQuarter": quarter,
+                                                    "examQuarter": quarter
                                                     })
 
 @app.get("/schools", response_class=HTMLResponse, name="schools")

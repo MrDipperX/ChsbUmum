@@ -29,5 +29,5 @@ if __name__ == "__main__":
     db.insert_admins()
     print("Inserting data")
     # insert_data_to_tables(filename="chsb_23_24_1.xlsx", quarter="1", year="2024/2025")
-    # inserting_teachers(filename="teachers_24_25.xlsx", year="2024/2025")
+    inserting_teachers(filename="teachers_24_25.xlsx", year="2024/2025")
     uvicorn.run("main:app", host="0.0.0.0", port=3132, reload=True)
